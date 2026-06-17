@@ -1,0 +1,4 @@
+server.log
+data.json
+*.pyc
+__pycache__/
