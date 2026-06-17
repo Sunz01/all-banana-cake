@@ -1,0 +1,5 @@
+[build]
+  publish = "."
+
+[context.production]
+  command = "echo 'No build needed'"

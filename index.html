@@ -615,7 +615,7 @@
 <script>
   async function loadInventory() {
     try {
-      const res = await fetch('/api/inventory');
+      const res = await fetch('/inventory.json');
       const data = await res.json();
       const inv = data.inventory || [];
       const grid = document.getElementById('inventory-grid');
