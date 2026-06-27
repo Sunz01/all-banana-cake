@@ -255,14 +255,18 @@
       border-radius: var(--radius);
       overflow: hidden;
       aspect-ratio: 4/3;
-      background: #e0d0b0;
+      background: var(--cream);
       box-shadow: 0 3px 12px rgba(61,31,10,0.1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
     .gallery-item img {
       width: 100%;
       height: 100%;
-      object-fit: cover;
+      object-fit: contain;
       display: block;
+      background: var(--cream);
     }
 
     /* ── DELIVERY ── */
@@ -613,11 +617,10 @@
 
 <script>
   async function loadInventory() {
-    // Check for preview changes first
     const preview = localStorage.getItem('bananaCakePreview');
     let inv = [];
     let gallery = [];
-    
+
     try {
       const res = await fetch('/data.json');
       const data = await res.json();
@@ -627,8 +630,7 @@
       document.getElementById('inventory-grid').innerHTML = '<p style="opacity:0.6">Unable to load stock.</p>';
       return;
     }
-    
-    // Override with preview if exists
+
     if (preview) {
       try {
         const previewData = JSON.parse(preview);
@@ -636,7 +638,7 @@
         if (previewData.gallery) gallery = previewData.gallery;
       } catch(e) {}
     }
-    
+
     const grid = document.getElementById('inventory-grid');
     if (!inv.length) {
       grid.innerHTML = '<p style="opacity:0.6">No slots available yet. Check back soon!</p>';
@@ -649,8 +651,7 @@
         <div style="font-size:0.78rem;margin-top:0.2rem;color:var(--caramel);font-weight:600;">boxes left</div>
       </div>
     `).join('');
-    
-    // Also update gallery
+
     const galleryGrid = document.getElementById('gallery-grid');
     if (gallery.length) {
       galleryGrid.innerHTML = gallery.map(item => `
@@ -660,8 +661,6 @@
       `).join('');
     }
   }
-
-
 
   const urlParams = new URLSearchParams(window.location.search);
   if (urlParams.get('admin') === '1') {
@@ -709,7 +708,7 @@
   function renderGalleryFields() {
     document.getElementById('admin-gallery').innerHTML = adminGalleryData.map((item, i) => `
       <div style="display:flex;gap:0.5rem;margin-bottom:0.6rem;align-items:center;">
-        <img src="images/${item.name}" style="width:56px;height:56px;object-fit:cover;border-radius:8px;">
+        <img src="images/${item.name}" style="width:56px;height:56px;object-fit:contain;border-radius:8px;background:var(--cream);">
         <span style="flex:1;font-size:0.82rem;">${item.name}</span>
         <button class="rm-btn" onclick="removeGalleryImage(${i})">✕</button>
       </div>
@@ -740,19 +739,17 @@
   async function updateStock() {
     const password = document.getElementById('admin-password').value;
     if (password !== 'banana123') { alert('Invalid password!'); return; }
-    
+
     const dateInputs = document.querySelectorAll('.date-input');
     const boxesInputs = document.querySelectorAll('.boxes-input');
     const inv = [];
     dateInputs.forEach((d, i) => {
       if (d.value.trim()) inv.push({ date: d.value.trim(), boxes: parseInt(boxesInputs[i].value) || 0 });
     });
-    
-    // Save to localStorage for preview (static site limitation)
+
     const data = { inventory: inv, gallery: adminGalleryData, admin_password: password };
     localStorage.setItem('bananaCakePreview', JSON.stringify(data));
-    
-    // Update the UI immediately
+
     const grid = document.getElementById('inventory-grid');
     grid.innerHTML = inv.map(item => `
       <div class="stock-card">
@@ -761,7 +758,7 @@
         <div style="font-size:0.78rem;margin-top:0.2rem;color:var(--caramel);font-weight:600;">boxes left</div>
       </div>
     `).join('');
-    
+
     alert('✅ Changes saved! Note: This is a preview. To publish permanently, edit data.json in the repo.');
     hideAdmin();
   }
