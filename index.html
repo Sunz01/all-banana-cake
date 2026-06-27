@@ -613,43 +613,55 @@
 
 <script>
   async function loadInventory() {
+    // Check for preview changes first
+    const preview = localStorage.getItem('bananaCakePreview');
+    let inv = [];
+    let gallery = [];
+    
     try {
       const res = await fetch('/data.json');
       const data = await res.json();
-      const inv = data.inventory || [];
-      const grid = document.getElementById('inventory-grid');
-      if (!inv.length) {
-        grid.innerHTML = '<p style="opacity:0.6">No slots available yet. Check back soon!</p>';
-        return;
-      }
-      grid.innerHTML = inv.map(item => `
-        <div class="stock-card">
-          <div class="stock-num">${item.boxes}</div>
-          <div class="stock-date">${item.date}</div>
-          <div style="font-size:0.78rem;margin-top:0.2rem;color:var(--caramel);font-weight:600;">boxes left</div>
-        </div>
-      `).join('');
+      inv = data.inventory || [];
+      gallery = data.gallery || [];
     } catch(e) {
       document.getElementById('inventory-grid').innerHTML = '<p style="opacity:0.6">Unable to load stock.</p>';
+      return;
     }
-  }
-
-  async function loadGallery() {
-    try {
-      const res = await fetch('/data.json');
-      const data = await res.json();
-      const gallery = data.gallery || [];
-      const grid = document.getElementById('gallery-grid');
-      if (!gallery.length) { grid.innerHTML = ''; return; }
-      grid.innerHTML = gallery.map(item => `
+    
+    // Override with preview if exists
+    if (preview) {
+      try {
+        const previewData = JSON.parse(preview);
+        if (previewData.inventory) inv = previewData.inventory;
+        if (previewData.gallery) gallery = previewData.gallery;
+      } catch(e) {}
+    }
+    
+    const grid = document.getElementById('inventory-grid');
+    if (!inv.length) {
+      grid.innerHTML = '<p style="opacity:0.6">No slots available yet. Check back soon!</p>';
+      return;
+    }
+    grid.innerHTML = inv.map(item => `
+      <div class="stock-card">
+        <div class="stock-num">${item.boxes}</div>
+        <div class="stock-date">${item.date}</div>
+        <div style="font-size:0.78rem;margin-top:0.2rem;color:var(--caramel);font-weight:600;">boxes left</div>
+      </div>
+    `).join('');
+    
+    // Also update gallery
+    const galleryGrid = document.getElementById('gallery-grid');
+    if (gallery.length) {
+      galleryGrid.innerHTML = gallery.map(item => `
         <div class="gallery-item">
           <img src="images/${decodeURIComponent(item.name)}" alt="Banana cake" loading="lazy">
         </div>
       `).join('');
-    } catch(e) {
-      document.getElementById('gallery-grid').innerHTML = '';
     }
   }
+
+
 
   const urlParams = new URLSearchParams(window.location.search);
   if (urlParams.get('admin') === '1') {
@@ -726,25 +738,35 @@
   function hideAdmin() { document.getElementById('admin-modal').style.display = 'none'; }
 
   async function updateStock() {
+    const password = document.getElementById('admin-password').value;
+    if (password !== 'banana123') { alert('Invalid password!'); return; }
+    
     const dateInputs = document.querySelectorAll('.date-input');
     const boxesInputs = document.querySelectorAll('.boxes-input');
     const inv = [];
     dateInputs.forEach((d, i) => {
       if (d.value.trim()) inv.push({ date: d.value.trim(), boxes: parseInt(boxesInputs[i].value) || 0 });
     });
-    const password = document.getElementById('admin-password').value;
-    if (!password) { alert('Please enter admin password'); return; }
-    const res = await fetch('/api/update', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ inventory: inv, gallery: adminGalleryData, password })
-    });
-    if (res.ok) { hideAdmin(); loadInventory(); loadGallery(); }
-    else { alert('Invalid password!'); }
+    
+    // Save to localStorage for preview (static site limitation)
+    const data = { inventory: inv, gallery: adminGalleryData, admin_password: password };
+    localStorage.setItem('bananaCakePreview', JSON.stringify(data));
+    
+    // Update the UI immediately
+    const grid = document.getElementById('inventory-grid');
+    grid.innerHTML = inv.map(item => `
+      <div class="stock-card">
+        <div class="stock-num">${item.boxes}</div>
+        <div class="stock-date">${item.date}</div>
+        <div style="font-size:0.78rem;margin-top:0.2rem;color:var(--caramel);font-weight:600;">boxes left</div>
+      </div>
+    `).join('');
+    
+    alert('✅ Changes saved! Note: This is a preview. To publish permanently, edit data.json in the repo.');
+    hideAdmin();
   }
 
   loadInventory();
-  loadGallery();
 </script>
 </body>
 </html>
