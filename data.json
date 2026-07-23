@@ -1,16 +1,16 @@
 {
   "inventory": [
-    {
-      "date": "25/07/2026",
-      "boxes": 28
-    }
+    {"date": "24/07/2026", "boxes": 13},
+    {"date": "25/07/2026", "boxes": 30},
+    {"date": "26/07/2026", "boxes": 30},
+    {"date": "27/07/2026", "boxes": 20},
+    {"date": "28/07/2026", "boxes": 20},
+    {"date": "29/07/2026", "boxes": 20},
+    {"date": "30/07/2026", "boxes": 20},
+    {"date": "31/07/2026", "boxes": 30}
   ],
   "gallery": [
-    {
-      "name": "Choco.jpeg"
-    },
-    {
-      "name": "Original.jpeg"
-    }
+    {"name": "Choco.jpeg"},
+    {"name": "Original.jpeg"}
   ]
 }
