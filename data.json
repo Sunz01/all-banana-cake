@@ -1,13 +1,13 @@
 {
   "inventory": [
-    {"date": "30/7/2026", "boxes": 10},
-    {"date": "31/7/2026", "boxes": 15},
-    {"date": "1/8/2026", "boxes": 20},
-    {"date": "2/8/2026", "boxes": 18},
-    {"date": "3/8/2026", "boxes": 12},
+    {"date": "3/8/2026", "boxes": 15},
     {"date": "4/8/2026", "boxes": 15},
-    {"date": "5/8/2026", "boxes": 10},
-    {"date": "6/8/2026", "boxes": 8}
+    {"date": "5/8/2026", "boxes": 14},
+    {"date": "6/8/2026", "boxes": 20},
+    {"date": "7/8/2026", "boxes": 15},
+    {"date": "8/8/2026", "boxes": 30},
+    {"date": "9/8/2026", "boxes": 29},
+    {"date": "10/8/2026", "boxes": 20}
   ],
   "gallery": [
     {"name": "Choco.jpeg"},
