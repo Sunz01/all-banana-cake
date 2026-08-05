@@ -244,8 +244,10 @@
             <input type="text" class="modal-input" id="customerPhone" placeholder="Phone Number *">
             
             <div class="form-group">
-                <label>📅 Date</label>
-                <input type="date" id="orderDate">
+                <label>📅 Date (only available dates)</label>
+                <input type="date" id="orderDate" list="available-dates">
+                <datalist id="available-dates"></datalist>
+                <small id="dateHint" style="color:var(--text-light);font-size:12px;margin-top:4px;display:block;">Tap a date chip above to select</small>
             </div>
             
             <div class="form-group">
@@ -346,11 +348,67 @@
             const grid = document.getElementById('slotsGrid');
             if (!inventory.length) { grid.innerHTML = '<div class="loading">No slots</div>'; return; }
             grid.innerHTML = inventory.map(s => `<div class="slot ${s.boxes === 0 ? 'soldout' : ''}" onclick="${s.boxes > 0 ? `selectDate('${s.date}')` : ''}"><div class="slot-date">${s.date}</div><div class="slot-qty ${s.boxes === 0 ? 'soldout' : ''}">${s.boxes > 0 ? s.boxes + ' boxes' : 'Sold Out'}</div></div>`).join('');
+            
+            // Populate datalist with only available (in stock) dates
+            const datalist = document.getElementById('available-dates');
+            if (datalist) {
+                const availableDates = inventory.filter(s => s.boxes > 0);
+                datalist.innerHTML = availableDates.map(s => {
+                    // Convert DD/MM/YYYY to YYYY-MM-DD for datalist
+                    const isoDate = s.date.split('/').reverse().join('-');
+                    return `<option value="${isoDate}">${s.date} (${s.boxes} left)</option>`;
+                }).join('');
+                
+                // Set min/max based on earliest and latest available dates
+                if (availableDates.length > 0) {
+                    const isoDates = availableDates.map(s => s.date.split('/').reverse().join('-')).sort();
+                    const dateInput = document.getElementById('orderDate');
+                    dateInput.min = isoDates[0];
+                    dateInput.max = isoDates[isoDates.length - 1];
+                }
+            }
         }
 
         function selectDate(date) {
+            // date is in DD/MM/YYYY format
             document.getElementById('orderDate').value = date.split('/').reverse().join('-');
+            const slot = inventory.find(s => s.date === date);
+            const hint = document.getElementById('dateHint');
+            if (slot) {
+                hint.textContent = `✅ ${date} - ${slot.boxes} boxes available`;
+                hint.style.color = 'var(--primary-dark)';
+                hint.style.fontWeight = '600';
+            }
         }
+
+        // Validate manually entered date
+        document.addEventListener('DOMContentLoaded', () => {
+            const dateInput = document.getElementById('orderDate');
+            if (dateInput) {
+                dateInput.addEventListener('change', (e) => {
+                    const val = e.target.value;
+                    if (!val) return;
+                    const formattedDate = new Date(val).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' });
+                    const slot = inventory.find(s => s.date === formattedDate);
+                    const hint = document.getElementById('dateHint');
+                    if (!slot) {
+                        hint.textContent = `⚠️ ${formattedDate} is not available. Please choose from available dates.`;
+                        hint.style.color = '#c00';
+                        hint.style.fontWeight = '600';
+                        e.target.value = '';
+                    } else if (slot.boxes <= 0) {
+                        hint.textContent = `❌ ${formattedDate} is sold out. Please choose another date.`;
+                        hint.style.color = '#c00';
+                        hint.style.fontWeight = '600';
+                        e.target.value = '';
+                    } else {
+                        hint.textContent = `✅ ${formattedDate} - ${slot.boxes} boxes available`;
+                        hint.style.color = 'var(--primary-dark)';
+                        hint.style.fontWeight = '600';
+                    }
+                });
+            }
+        });
 
         function renderProducts(category = 'all') {
             const filtered = category === 'all' ? products : products.filter(p => p.category === category);
@@ -456,11 +514,22 @@
             if (!name || !phone) return alert('Please fill in name and phone');
             if (!date) return alert('Please select a date');
             if (deliveryType === 'delivery' && !addr) return alert('Please enter delivery address');
+            
+            // Check date is in available inventory
+            const dateObj = new Date(date);
+            const formattedDate = dateObj.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' });
+            const slot = inventory.find(s => s.date === formattedDate);
+            if (!slot) return alert('This date is not available. Please select from available dates.');
+            if (slot.boxes <= 0) return alert('Sorry, this date is sold out. Please select another date.');
+            
+            // Check stock vs order quantity
+            const totalBoxes = cart.reduce((s, i) => s + i.qty, 0);
+            if (totalBoxes > slot.boxes) {
+                return alert(`Sorry, only ${slot.boxes} boxes left for ${formattedDate}. You ordered ${totalBoxes}.`);
+            }
 
             localStorage.setItem('bananaCakeCustomer', JSON.stringify({ name, phone }));
             
-            const dateObj = new Date(date);
-            const formattedDate = dateObj.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' });
             const subtotal = cart.reduce((s, i) => s + i.price * i.qty, 0);
             const discount = Math.min(promoDiscount, subtotal);
             const total = Math.max(0, subtotal + deliveryFee - discount);
