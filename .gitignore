@@ -2,3 +2,6 @@ server.log
 data.json
 *.pyc
 __pycache__/
+backups/
+*.bak
+*.backup
